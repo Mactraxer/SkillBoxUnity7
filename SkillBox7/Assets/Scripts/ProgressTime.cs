@@ -28,7 +28,7 @@ public class ProgressTime : MonoBehaviour
         if (currentTime <= 0)
         {
             currentTime = maxTime;
-            eventSender.Tick(TickFrom.warrior);
+            eventSender.Tick(TickFrom.battle);
         }
 
         changableImage.fillAmount = currentTime / maxTime;

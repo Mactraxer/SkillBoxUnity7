@@ -3,15 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public enum TickFrom
-{
-    warriorTrain, warriorEat, peasantTrain, peasantEat, wheatGet, battle
-}
-public interface ITickable
-{
-    void Tick(TickFrom from);
-}
-
 public interface IEatable
 {
     void Eat();
@@ -34,7 +25,7 @@ public interface IIncomeable
     void IncomeFood();
 }
 
-public class GameController : MonoBehaviour, ITickable, IEatable, ITrainable, IRaidable, IIncomeable
+public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, IIncomeable
 {
 
     public int warriorCount;
@@ -53,48 +44,20 @@ public class GameController : MonoBehaviour, ITickable, IEatable, ITrainable, IR
     [SerializeField] Text peasantCountText;
     [SerializeField] Text warriorCountText;
     [SerializeField] Text wheatCountText;
-
-    public void Tick(TickFrom from)
-    {
-        switch(from)
-        {
-            case TickFrom.warriorTrain:
-                TrainWarrior();
-                break;
-            case TickFrom.warriorEat:
-                WarriorEat();
-                break;
-            case TickFrom.peasantTrain:
-                PeasantEat();
-                break;
-            default:
-                break;
-        }
-        
-    }
+    [SerializeField] Text consoleText;
 
     // Start is called before the first frame update
     void Start()
     {
-       
+        consoleText.text = "";
     }
 
     // Update is called once per frame
     void Update()
     {
-        warriorCountText.text = $"Кол-во воинов: {warriorCount}";
-        peasantCountText.text = $"Кол-во крестьян: {peasantCount}";
-        wheatCountText.text = $"Кол-во пшеницы: {wheatCount}";
-    }
-
-    private void TrainWarrior()
-    {
-        warriorCount++;
-    }
-
-    private void TrainPeasant()
-    {
-        
+        warriorCountText.text = $"{warriorCount}";
+        peasantCountText.text = $"{peasantCount}";
+        wheatCountText.text = $"{wheatCount}";
     }
 
     private void WarriorEat()
@@ -106,6 +69,7 @@ public class GameController : MonoBehaviour, ITickable, IEatable, ITrainable, IR
         else
         {
             warriorCount--;
+            PrintTextToConsole($"Из-за нехватки еды у вас умер один воин");
         }
         
     }
@@ -119,13 +83,14 @@ public class GameController : MonoBehaviour, ITickable, IEatable, ITrainable, IR
         else
         {
             peasantCount--;
+            PrintTextToConsole($"Из-за нехватки еды у вас умер один крестьянин");
         }
     }
 
     public void Eat()
     {
-        wheatCount -= peasantCount * peasantEatCount;
-        wheatCount -= warriorCount * warriorEatCount;
+        WarriorEat();
+        PeasantEat();
     }
 
     public bool TrainIsAvailable(UnitType unit)
@@ -161,20 +126,30 @@ public class GameController : MonoBehaviour, ITickable, IEatable, ITrainable, IR
         {
             case UnitType.peasant:
                 peasantCount++;
+                PrintTextToConsole($"Вы успешно наняли крестьянина");
                 break;
             case UnitType.warrior:
                 warriorCount++;
+                PrintTextToConsole($"Вы успешно наняли воина");
                 break;
         }
+    }
+
+    private void PrintTextToConsole(string text)
+    {
+        consoleText.text += text + "\n";
     }
 
     public void StartRaid(int count)
     {
         warriorCount -= count;
+        PrintTextToConsole($"На вашу деревню напали. Вы потеряли {count} воинов");
     }
 
     public void IncomeFood()
     {
-        wheatCount += incomeFoodRate * peasantCount;
+        int foodIncome = incomeFoodRate * peasantCount;
+        wheatCount += foodIncome;
+        PrintTextToConsole($"Ваш доход зерна составил {foodIncome}");
     }
 }

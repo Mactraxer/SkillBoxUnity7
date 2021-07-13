@@ -10,14 +10,14 @@ public class ProgressTime : MonoBehaviour
     [SerializeField] Image changableImage;
     [SerializeField] float maxTime;
 
-    public ITickable eventSender;
+   
 
     private float currentTime;
     // Start is called before the first frame update
     void Start()
     {
         currentTime = maxTime;
-        eventSender = GameObject.FindGameObjectWithTag("GameManager").GetComponent<GameController>();
+       
     }
 
     // Update is called once per frame
@@ -28,7 +28,7 @@ public class ProgressTime : MonoBehaviour
         if (currentTime <= 0)
         {
             currentTime = maxTime;
-            eventSender.Tick(TickFrom.battle);
+
         }
 
         changableImage.fillAmount = currentTime / maxTime;

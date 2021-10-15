@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class RaidCircle : MonoBehaviour
@@ -10,6 +8,7 @@ public class RaidCircle : MonoBehaviour
     private float timeBeforeRaid;
     public int enemyCount;
     public IRaidable raidDelegate;
+
     // Start is called before the first frame update
     void Start()
     {

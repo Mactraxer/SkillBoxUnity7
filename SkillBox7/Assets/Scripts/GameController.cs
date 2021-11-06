@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
+using System;
 
+#region Interfaces
 public interface IEatable
 {
     void Eat();
@@ -23,6 +25,8 @@ public interface IIncomeable
     void IncomeFood();
 }
 
+#endregion
+
 public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, IIncomeable
 {
 
@@ -39,15 +43,17 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
     public int incomeFoodRate;
 
     // UI Components
-    [SerializeField] Text peasantCountText;
-    [SerializeField] Text warriorCountText;
-    [SerializeField] Text wheatCountText;
-    [SerializeField] Text consoleText;
+    [SerializeField] private Text peasantCountText;
+    [SerializeField] private Text warriorCountText;
+    [SerializeField] private Text wheatCountText;
+
+    // Delegates
+    private IConsoleInput consoleDelegate;
 
     // Start is called before the first frame update
     void Start()
     {
-        consoleText.text = "";
+        consoleDelegate = GameObject.FindGameObjectWithTag("ConsoleManager").GetComponent<ConsoleController>();
     }
 
     // Update is called once per frame
@@ -67,7 +73,7 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
         else
         {
             warriorCount--;
-            PrintTextToConsole($"Из-за нехватки еды у вас умер один воин");
+            //PrintTextToConsole($"Из-за нехватки еды у вас умер один воин");
         }
         
     }
@@ -81,7 +87,7 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
         else
         {
             peasantCount--;
-            PrintTextToConsole($"Из-за нехватки еды у вас умер один крестьянин");
+            //PrintTextToConsole($"Из-за нехватки еды у вас умер один крестьянин");
         }
     }
 
@@ -124,30 +130,63 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
         {
             case UnitType.peasant:
                 peasantCount++;
-                PrintTextToConsole($"Вы успешно наняли крестьянина");
                 break;
             case UnitType.warrior:
                 warriorCount++;
-                PrintTextToConsole($"Вы успешно наняли воина");
                 break;
         }
-    }
-
-    private void PrintTextToConsole(string text)
-    {
-        consoleText.text += text + "\n";
+        WriteTrainResultToConsole(unit);
     }
 
     public void StartRaid(int count)
     {
         warriorCount -= count;
-        PrintTextToConsole($"На вашу деревню напали. Вы потеряли {count} воинов");
+        WriteRaidResultToConsole(count);
     }
 
     public void IncomeFood()
     {
         int foodIncome = incomeFoodRate * peasantCount;
         wheatCount += foodIncome;
-        PrintTextToConsole($"Ваш доход зерна составил {foodIncome}");
+
+        WriteIncomeToConsole(foodIncome);
     }
+
+    #region WorkWithConsole
+    private bool TryAccessToConsole()
+    {
+        if (consoleDelegate == null)
+        {
+            throw new NullReferenceException(); 
+        }
+        else
+        {
+            return true;
+        }
+    }
+
+    private void WriteIncomeToConsole(int count)
+    {
+        if (TryAccessToConsole())
+        {
+            consoleDelegate.DidIncome(count);
+        }
+    }
+
+    private void WriteTrainResultToConsole(UnitType unit)
+    {
+        if (TryAccessToConsole())
+        {
+            consoleDelegate.DidTrain(unit);
+        }
+    }
+
+    private void WriteRaidResultToConsole(int deathCount)
+    {
+        if (TryAccessToConsole())
+        {
+            consoleDelegate.DidRaid(deathCount);
+        }
+    }
+    #endregion
 }

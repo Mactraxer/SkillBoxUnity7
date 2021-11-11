@@ -1,19 +1,24 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
+public interface ITickable
+{
+    void DidTick();
+}
+
 public class RaidCircle : MonoBehaviour
 {
     [SerializeField] Image changableImage;
-    public float raidTime;
+    
+    private float raidTime;
     private float timeBeforeRaid;
-    public int enemyCount;
-    public IRaidable raidDelegate;
+    public ITickable tickDelegate;
 
     // Start is called before the first frame update
     void Start()
     {
         timeBeforeRaid = raidTime;
-        raidDelegate = GameObject.FindGameObjectWithTag("GameManager").GetComponent<GameController>();
+        tickDelegate = GameObject.FindGameObjectWithTag("RaidService").GetComponent<RaidService>();
     }
 
     // Update is called once per frame
@@ -24,9 +29,14 @@ public class RaidCircle : MonoBehaviour
         if (timeBeforeRaid < 0)
         {
             timeBeforeRaid = raidTime;
-            raidDelegate.StartRaid(enemyCount);
+            tickDelegate.DidTick();
         }
 
         changableImage.fillAmount = timeBeforeRaid / raidTime;
+    }
+
+    public void SetupComponent(float tickTime)
+    {
+        raidTime = tickTime;
     }
 }

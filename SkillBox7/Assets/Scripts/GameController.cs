@@ -18,6 +18,7 @@ public interface ITrainable
 public interface IRaidable 
 {
     void StartRaid(int count);
+    void RaidWavesEnd();
 }
 
 public interface IIncomeable
@@ -30,15 +31,22 @@ public interface IIncomeable
 public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, IIncomeable
 {
 
-    public int warriorCount;
-    public int peasantCount;
-    public int wheatCount;
+    private int warriorCount;
+    private int peasantCount;
+    private int wheatCount;
+
+    private int raidWaveCount = 1;
+    private int currentWave = 0;
+    private int maxWaveCount = 10;
+    
 
     public int warriorEatCount;
     public int peasantEatCount;
 
     public int warriorTrainPrice;
+    public int countWarriorDeathByStarvation;
     public int peasantTrainPrice;
+    public int countPeasantDeathByStarvation;
 
     public int incomeFoodRate;
 
@@ -54,10 +62,30 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
     void Start()
     {
         consoleDelegate = GameObject.FindGameObjectWithTag("ConsoleManager").GetComponent<ConsoleController>();
+        UpdateLabels();
+
+        wheatCount = 100;
     }
 
-    // Update is called once per frame
-    void Update()
+    #region Private methods
+    private void SetWarriorCount(int newCount)
+    {
+        warriorCount = newCount;
+        UpdateLabels();
+    }
+
+    private void SetPeasantCount(int newCount)
+    {
+        peasantCount = newCount;
+        UpdateLabels();
+    }
+
+    private void SetWheatCount(int newCount)
+    {
+        wheatCount = newCount;
+        UpdateLabels();
+    }
+    private void UpdateLabels()
     {
         warriorCountText.text = $"{warriorCount}";
         peasantCountText.text = $"{peasantCount}";
@@ -68,43 +96,65 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
     {
         if (wheatCount >= warriorEatCount * warriorCount)
         {
-            wheatCount -= warriorCount * warriorEatCount;
+            int warriorEat = warriorCount * warriorEatCount;
+            SetWheatCount(wheatCount - warriorEat);
         }
         else
         {
-            warriorCount--;
-            //PrintTextToConsole($"Из-за нехватки еды у вас умер один воин");
+            SetWarriorCount(warriorCount - countWarriorDeathByStarvation);
+            consoleDelegate.DidDeathByStarvation(UnitType.warrior);
         }
-        
     }
 
     private void PeasantEat()
     {
         if (wheatCount >= peasantEatCount * peasantCount)
         {
-            wheatCount -= peasantEatCount * peasantCount;
+            int peasantEat = peasantEatCount * peasantCount;
+            SetWheatCount(wheatCount - peasantEat);
         }
         else
         {
-            peasantCount--;
-            //PrintTextToConsole($"Из-за нехватки еды у вас умер один крестьянин");
+            SetPeasantCount(peasantCount - countPeasantDeathByStarvation);
+            consoleDelegate.DidDeathByStarvation(UnitType.peasant);
         }
     }
 
+    #endregion
+
+    #region IEatable
     public void Eat()
     {
         WarriorEat();
         PeasantEat();
     }
+    #endregion
 
+    #region ITrainable
     public bool TrainIsAvailable(UnitType unit)
     {
         switch (unit) 
         {
             case UnitType.peasant:
-                return wheatCount >= peasantTrainPrice;
+                if (wheatCount >= peasantTrainPrice)
+                {
+                    return true;
+                }
+                else
+                {
+                    consoleDelegate.TrainPriceError();
+                    return false;
+                }
             case UnitType.warrior:
-                return wheatCount >= warriorTrainPrice;
+                if (wheatCount >= warriorTrainPrice)
+                {
+                    return true;
+                }
+                else
+                {
+                    consoleDelegate.TrainPriceError();
+                    return false;
+                }
             default:
                 return false;
         }
@@ -116,12 +166,13 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
         switch (unit)
         {
             case UnitType.peasant:
-                wheatCount -= peasantTrainPrice;
+                SetWheatCount(wheatCount - peasantTrainPrice);
                 break;
             case UnitType.warrior:
-                wheatCount -= warriorTrainPrice;
+                SetWheatCount(wheatCount - warriorTrainPrice);
                 break;
         }
+
     }
 
     public void FinishedTrain(UnitType unit)
@@ -129,28 +180,39 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
         switch (unit)
         {
             case UnitType.peasant:
-                peasantCount++;
+                SetPeasantCount(peasantCount + 1);
                 break;
             case UnitType.warrior:
-                warriorCount++;
+                SetWarriorCount(warriorCount + 1);
                 break;
         }
         WriteTrainResultToConsole(unit);
     }
 
+    #endregion
+
+    #region IRaidable
     public void StartRaid(int count)
     {
-        warriorCount -= count;
+        SetWarriorCount(warriorCount - count);
         WriteRaidResultToConsole(count);
     }
 
+    public void RaidWavesEnd()
+    {
+        //TODO win game
+    }
+    #endregion
+
+    #region IIncomeable
     public void IncomeFood()
     {
         int foodIncome = incomeFoodRate * peasantCount;
-        wheatCount += foodIncome;
+        SetWheatCount(wheatCount + foodIncome);
 
         WriteIncomeToConsole(foodIncome);
     }
+    #endregion
 
     #region WorkWithConsole
     private bool TryAccessToConsole()

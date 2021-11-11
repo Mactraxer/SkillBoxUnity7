@@ -1,6 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
 
 public class TrainCircle : MonoBehaviour
@@ -39,6 +37,7 @@ public class TrainCircle : MonoBehaviour
     {
         if (trainDelegate.TrainIsAvailable(unitType) && isTraining == false)
         {
+            Debug.Log("StartTrain");
             trainDelegate.StartTrain(unitType);
             isTraining = true;
         }

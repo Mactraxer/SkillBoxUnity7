@@ -6,6 +6,8 @@ TagManager:
   tags:
   - GameManager
   - ConsoleManager
+  - RaidService
+  - RaidTick
   layers:
   - Default
   - TransparentFX

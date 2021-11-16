@@ -58,13 +58,19 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
     // Delegates
     private IConsoleInput consoleDelegate;
 
+    private IRaidService raidService;
+
     // Start is called before the first frame update
     void Start()
     {
         consoleDelegate = GameObject.FindGameObjectWithTag("ConsoleManager").GetComponent<ConsoleController>();
+        raidService = GameObject.FindGameObjectWithTag("RaidService").GetComponent<RaidService>();
         UpdateLabels();
 
         wheatCount = 100;
+
+        raidService.SetupRaidService(1, 10);
+        UpdateLabels();
     }
 
     #region Private methods
@@ -196,11 +202,17 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
     {
         SetWarriorCount(warriorCount - count);
         WriteRaidResultToConsole(count);
+        if (warriorCount < 1)
+        {
+            //TODO lose game
+            Debug.Log("You lose game");
+        }
     }
 
     public void RaidWavesEnd()
     {
         //TODO win game
+        Debug.Log("You win game");
     }
     #endregion
 

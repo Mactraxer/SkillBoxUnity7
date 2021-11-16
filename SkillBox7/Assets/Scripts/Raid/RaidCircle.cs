@@ -6,7 +6,12 @@ public interface ITickable
     void DidTick();
 }
 
-public class RaidCircle : MonoBehaviour
+public interface ITick
+{
+    void SetupTick(float time);
+}
+
+public class RaidCircle : MonoBehaviour, ITick
 {
     [SerializeField] Image changableImage;
     
@@ -18,7 +23,7 @@ public class RaidCircle : MonoBehaviour
     void Start()
     {
         timeBeforeRaid = raidTime;
-        tickDelegate = GameObject.FindGameObjectWithTag("RaidService").GetComponent<RaidService>();
+        tickDelegate = GameObject.FindGameObjectWithTag("RaidService").GetComponent<ITickable>();
     }
 
     // Update is called once per frame
@@ -35,8 +40,8 @@ public class RaidCircle : MonoBehaviour
         changableImage.fillAmount = timeBeforeRaid / raidTime;
     }
 
-    public void SetupComponent(float tickTime)
+    void ITick.SetupTick(float time)
     {
-        raidTime = tickTime;
+        raidTime = time;
     }
 }

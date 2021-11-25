@@ -8,6 +8,7 @@ TagManager:
   - ConsoleManager
   - RaidService
   - RaidTick
+  - Router
   layers:
   - Default
   - TransparentFX

@@ -35,6 +35,7 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
     private int peasantCount;
     private int wheatCount;
 
+    #region Game setting
     private int raidWaveCount = 1;
     private int currentWave = 0;
     private int maxWaveCount = 10;
@@ -49,7 +50,7 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
     public int countPeasantDeathByStarvation;
 
     public int incomeFoodRate;
-
+    #endregion
     // UI Components
     [SerializeField] private Text peasantCountText;
     [SerializeField] private Text warriorCountText;
@@ -57,14 +58,20 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
 
     // Delegates
     private IConsoleInput consoleDelegate;
-
     private IRaidService raidService;
+    private IStatisticsWrite statistics;
+
+    [SerializeField]
+    private ScreenRouting routing;
 
     // Start is called before the first frame update
     void Start()
     {
         consoleDelegate = GameObject.FindGameObjectWithTag("ConsoleManager").GetComponent<ConsoleController>();
         raidService = GameObject.FindGameObjectWithTag("RaidService").GetComponent<RaidService>();
+        routing = GameObject.FindGameObjectWithTag("Router").GetComponent<ScreenRouting>();
+        statistics = StatisticsController.shared;
+
         UpdateLabels();
 
         wheatCount = 100;
@@ -124,6 +131,16 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
             SetPeasantCount(peasantCount - countPeasantDeathByStarvation);
             consoleDelegate.DidDeathByStarvation(UnitType.peasant);
         }
+    }
+
+    private void WinGame()
+    {
+        routing.ShowEndGameScreen();
+    }
+
+    private void LoseGame()
+    {
+        routing.ShowEndGameScreen();
     }
 
     #endregion
@@ -193,6 +210,7 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
                 break;
         }
         WriteTrainResultToConsole(unit);
+        statistics.trainedUnit(unit, 1);
     }
 
     #endregion
@@ -201,18 +219,17 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
     public void StartRaid(int count)
     {
         SetWarriorCount(warriorCount - count);
+        statistics.deadByRaid(count);
         WriteRaidResultToConsole(count);
         if (warriorCount < 1)
         {
-            //TODO lose game
-            Debug.Log("You lose game");
+            LoseGame();
         }
     }
 
     public void RaidWavesEnd()
     {
-        //TODO win game
-        Debug.Log("You win game");
+        WinGame();
     }
     #endregion
 
@@ -221,7 +238,7 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
     {
         int foodIncome = incomeFoodRate * peasantCount;
         SetWheatCount(wheatCount + foodIncome);
-
+        statistics.addedWheat(foodIncome);
         WriteIncomeToConsole(foodIncome);
     }
     #endregion

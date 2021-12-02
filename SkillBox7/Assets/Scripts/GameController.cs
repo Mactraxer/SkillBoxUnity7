@@ -26,6 +26,18 @@ public interface IIncomeable
     void IncomeFood();
 }
 
+public interface IGameEvents
+{
+    void ChangeWheatCount(int newCount);
+    void ChangeWarriorCount(int newCount);
+    void ChangePeasantCount(int newCount);
+    void UnitsDeath(UnitType unit, DeathReason reason, int count);
+    void GameWin();
+    void GameLose();
+    void NotEnoughPriceToTrainUnit(UnitType unit);
+    void SuccessTrainUnit(UnitType unit);
+}
+
 #endregion
 
 public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, IIncomeable
@@ -51,58 +63,38 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
 
     public int incomeFoodRate;
     #endregion
-    // UI Components
-    [SerializeField] private Text peasantCountText;
-    [SerializeField] private Text warriorCountText;
-    [SerializeField] private Text wheatCountText;
+
 
     // Delegates
-    private IConsoleInput consoleDelegate;
+    
     private IRaidService raidService;
     private IStatisticsWrite statistics;
-
-    [SerializeField]
-    private ScreenRouting routing;
+    private IGameEvents gameEvents;
+    
 
     // Start is called before the first frame update
     void Start()
     {
-        consoleDelegate = GameObject.FindGameObjectWithTag("ConsoleManager").GetComponent<ConsoleController>();
-        raidService = GameObject.FindGameObjectWithTag("RaidService").GetComponent<RaidService>();
-        routing = GameObject.FindGameObjectWithTag("Router").GetComponent<ScreenRouting>();
-        statistics = StatisticsController.shared;
-
-        UpdateLabels();
-
-        wheatCount = 100;
-
-        raidService.SetupRaidService(1, 10);
-        UpdateLabels();
+        SetupGame();
     }
 
     #region Private methods
     private void SetWarriorCount(int newCount)
     {
         warriorCount = newCount;
-        UpdateLabels();
+        gameEvents.ChangeWarriorCount(newCount);
     }
 
     private void SetPeasantCount(int newCount)
     {
         peasantCount = newCount;
-        UpdateLabels();
+        gameEvents.ChangePeasantCount(newCount);
     }
 
     private void SetWheatCount(int newCount)
     {
         wheatCount = newCount;
-        UpdateLabels();
-    }
-    private void UpdateLabels()
-    {
-        warriorCountText.text = $"{warriorCount}";
-        peasantCountText.text = $"{peasantCount}";
-        wheatCountText.text = $"{wheatCount}";
+        gameEvents.ChangeWheatCount(newCount);
     }
 
     private void WarriorEat()
@@ -115,7 +107,7 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
         else
         {
             SetWarriorCount(warriorCount - countWarriorDeathByStarvation);
-            consoleDelegate.DidDeathByStarvation(UnitType.warrior);
+            gameEvents.UnitsDeath(UnitType.warrior, DeathReason.starvation, countWarriorDeathByStarvation);
         }
     }
 
@@ -129,18 +121,36 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
         else
         {
             SetPeasantCount(peasantCount - countPeasantDeathByStarvation);
-            consoleDelegate.DidDeathByStarvation(UnitType.peasant);
+            gameEvents.UnitsDeath(UnitType.peasant, DeathReason.starvation, countPeasantDeathByStarvation);
         }
     }
 
-    private void WinGame()
+    public void SetupGame()
     {
-        routing.ShowEndGameScreen();
+        
+        raidService = FindComponents.FindComponentWithTag<RaidService>("RaidService");
+        gameEvents = FindComponents.FindComponentWithTag<IGameEvents>("GameScreen");
+        statistics = StatisticsController.shared;
+
+        countPeasantDeathByStarvation = 1;
+        countWarriorDeathByStarvation = 1;
+
+        wheatCount = 100;
     }
 
-    private void LoseGame()
+    private void StartGame()
     {
-        routing.ShowEndGameScreen();
+        raidService.SetupRaidService(1, 10);
+    }
+
+    private void GameWin()
+    {
+        gameEvents.GameWin();
+    }
+
+    private void GameLose()
+    {
+        gameEvents.GameLose();
     }
 
     #endregion
@@ -165,7 +175,7 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
                 }
                 else
                 {
-                    consoleDelegate.TrainPriceError();
+                    gameEvents.NotEnoughPriceToTrainUnit(UnitType.peasant);
                     return false;
                 }
             case UnitType.warrior:
@@ -175,7 +185,7 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
                 }
                 else
                 {
-                    consoleDelegate.TrainPriceError();
+                    gameEvents.NotEnoughPriceToTrainUnit(UnitType.warrior);
                     return false;
                 }
             default:
@@ -209,7 +219,7 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
                 SetWarriorCount(warriorCount + 1);
                 break;
         }
-        WriteTrainResultToConsole(unit);
+        gameEvents.SuccessTrainUnit(unit);
         statistics.trainedUnit(unit, 1);
     }
 
@@ -220,16 +230,16 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
     {
         SetWarriorCount(warriorCount - count);
         statistics.deadByRaid(count);
-        WriteRaidResultToConsole(count);
+        gameEvents.UnitsDeath(UnitType.warrior, DeathReason.raid, count);
         if (warriorCount < 1)
         {
-            LoseGame();
+            GameLose();
         }
     }
 
     public void RaidWavesEnd()
     {
-        WinGame();
+        GameWin();
     }
     #endregion
 
@@ -239,45 +249,8 @@ public class GameController : MonoBehaviour, IEatable, ITrainable, IRaidable, II
         int foodIncome = incomeFoodRate * peasantCount;
         SetWheatCount(wheatCount + foodIncome);
         statistics.addedWheat(foodIncome);
-        WriteIncomeToConsole(foodIncome);
+        gameEvents.ChangeWheatCount(foodIncome);
     }
     #endregion
 
-    #region WorkWithConsole
-    private bool TryAccessToConsole()
-    {
-        if (consoleDelegate == null)
-        {
-            throw new NullReferenceException(); 
-        }
-        else
-        {
-            return true;
-        }
-    }
-
-    private void WriteIncomeToConsole(int count)
-    {
-        if (TryAccessToConsole())
-        {
-            consoleDelegate.DidIncome(count);
-        }
-    }
-
-    private void WriteTrainResultToConsole(UnitType unit)
-    {
-        if (TryAccessToConsole())
-        {
-            consoleDelegate.DidTrain(unit);
-        }
-    }
-
-    private void WriteRaidResultToConsole(int deathCount)
-    {
-        if (TryAccessToConsole())
-        {
-            consoleDelegate.DidRaid(deathCount);
-        }
-    }
-    #endregion
 }

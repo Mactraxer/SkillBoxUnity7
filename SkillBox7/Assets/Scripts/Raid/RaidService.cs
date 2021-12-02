@@ -22,9 +22,14 @@ public class RaidService : MonoBehaviour, ITickable, IRaidService
     // Start is called before the first frame update
     void Start()
     {
+        
+    }
+
+    private void SetupRaid()
+    {
         currentWave = 0;
-        raidDelegate = GameObject.FindGameObjectWithTag("GameManager").GetComponent<IRaidable>();
-        raidTick = GameObject.FindGameObjectWithTag("RaidTick").GetComponent<ITick>();
+        raidDelegate = FindComponents.FindComponentWithTag<IRaidable>("GameManager");
+        raidTick = FindComponents.FindComponentWithTag<ITick>("RaidTick");
         raidTick.SetupTick(10);
         raidInfoText.text = "";
     }
@@ -43,6 +48,7 @@ public class RaidService : MonoBehaviour, ITickable, IRaidService
 
     void IRaidService.SetupRaidService(int enemyCountByWave, int maxWaves)
     {
+        SetupRaid();
         this.enemyCountByWave = enemyCountByWave;
         this.maxWaves = maxWaves;
         UpdateRaidInfoLabel($"Кол-во врагов {enemyCountByWave * currentWave}");

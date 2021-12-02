@@ -13,7 +13,7 @@ public class EatCircle : MonoBehaviour
     void Start()
     {
         eatCurrentTime = eatTime;
-        eatDelegate = GameObject.FindGameObjectWithTag("GameManager").GetComponent<GameController>();
+        eatDelegate = FindComponents.FindComponentWithTag<GameController>("GameManager");
     }
 
     // Update is called once per frame
@@ -30,7 +30,3 @@ public class EatCircle : MonoBehaviour
     }
 }
 
-public enum UnitType
-{
-    warrior, peasant
-}

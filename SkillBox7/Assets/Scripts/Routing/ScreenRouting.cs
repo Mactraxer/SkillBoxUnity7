@@ -4,7 +4,7 @@ public class ScreenRouting : MonoBehaviour
 {
 
     [SerializeField]
-    private GameObject mainMenuScreen;//Todo add main menu
+    private GameObject mainMenuScreen;
     [SerializeField]
     private GameObject gameScreen;
     [SerializeField]
@@ -33,10 +33,11 @@ public class ScreenRouting : MonoBehaviour
 
     public void ShowGameScreen()
     {
-        //gameScreen.SetActive(true);
+        gameScreen.SetActive(true);
+        mainMenuScreen.SetActive(false);
         //endGameScreen.SetActive(false);
-        //mainMenuScreen.SetActive(false);
-        throw new System.ArgumentNullException("Need setup game screen");
+
+
     }
  
 }
